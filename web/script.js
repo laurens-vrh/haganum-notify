@@ -9,7 +9,7 @@ function saveAccount() {
 	const password = elements.password.value;
 	if (!username || !password) return (elements.output.innerText = "Ongeldige gegevens.");
 
-	fetch("/haganum_notify/api/account", {
+	fetch("/haganum-nuntia/api/account", {
 		method: "post",
 		headers: {
 			"Content-Type": "application/json"
@@ -39,7 +39,7 @@ function deleteAccount() {
 	const password = elements.password.value;
 	if (!username || !password) return (elements.output.innerText = "Ongeldige gegevens.");
 
-	fetch("/haganum_notify/api/account", {
+	fetch("/haganum-nuntia/api/account", {
 		method: "delete",
 		headers: {
 			"Content-Type": "application/json"
