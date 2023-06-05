@@ -27,5 +27,5 @@ export function setLastGrade({ magister_username, last_grade }) {
 }
 
 export function deleteAccount({ magister_username, magister_password }) {
-	return db.prepare("DELETE FROM Accounts WHERE magister_username=? AND magister_password=?;").run(magister_username, magister_password);
+	return db.prepare("DELETE FROM Accounts WHERE magister_username=? AND magister_password=? RETURNING *;").get(magister_username, magister_password);
 }

@@ -34,6 +34,7 @@ app.post("/api/account", async (req, res) => {
 	const accountData = await Magister.getUserdata({ tokens });
 	const name = accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
 	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id });
+	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
 
 	console.log(`[INFO] User registered: ${req.body.username}`);
 	res.status(200).send({ name });
@@ -42,9 +43,10 @@ app.post("/api/account", async (req, res) => {
 app.delete("/api/account", async (req, res) => {
 	if (!req.body.username || !req.body.password) return res.status(400).send("Gegevens missen.");
 
-	const { changes } = Database.deleteAccount({ magister_username: req.body.username, magister_password: req.body.password });
-	if (changes === 0) return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
+	const change = Database.deleteAccount({ magister_username: req.body.username, magister_password: req.body.password });
+	if (!change) return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 
+	Mailer.sendSignoutEmail({ name: change.name, stamnummer: change.stamnummer });
 	res.status(200).send("Account removed.");
 	console.log(`[INFO] User deleted: ${req.body.username}`);
 });
@@ -90,7 +92,7 @@ async function updateGrades() {
 		if (oldGrade.getTime() < new Date(lastGrade.ingevoerdOp).getTime()) {
 			Database.setLastGrade({ magister_username: user.magister_username, last_grade: lastGrade.ingevoerdOp });
 
-			Mailer.sendEmail({ name: user.name, stamnummer: user.stamnummer, grade: lastGrade });
+			Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade: lastGrade });
 			console.log(`[INFO] Nieuw cijfer: ${user.magister_username} (${lastGrade.vak.code}: ${lastGrade.waarde})`);
 		}
 

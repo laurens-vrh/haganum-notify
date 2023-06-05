@@ -14,5 +14,5 @@ export default {
 		user: "lauverhaar@gmail.com",
 		password: "uggtkbxnmuzmjioq"
 	},
-	url: "https://laurensverhaar.nl/haganum_notify"
+	url: "https://laurensverhaar.nl/haganum-nuntia"
 };
