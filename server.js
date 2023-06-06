@@ -24,13 +24,14 @@ app.post("/api/account", async (req, res) => {
 	if (!req.body.username || !req.body.password) return res.status(400).send("Gegevens missen.");
 	req.body.username = req.body.username.toLowerCase();
 
+	var accountData;
 	try {
 		const tokens = await Magister.getTokens({
 			authCode: options.authCode,
 			username: req.body.username,
 			password: req.body.password
 		});
-		const accountData = await Magister.getUserdata({ tokens });
+		accountData = await Magister.getUserdata({ tokens });
 	} catch (error) {
 		return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 	}
@@ -74,32 +75,37 @@ async function updateGrades() {
 	const users = Database.getUsers();
 	for (let i = 0; i < users.length; i++) {
 		const user = users[i];
-		var cont = false;
-		const tokens = await Magister.getTokens({
-			authCode: options.authCode,
-			username: user.magister_username,
-			password: user.magister_password
-		}).catch((error) => {
-			cont = true;
-		});
-		if (cont) continue;
-
-		const grades = await Magister.getGrades({
-			id: user.magister_id,
-			tokens
-		});
-
-		const lastGrade = grades.items[0];
-		const oldGrade = new Date(user.last_grade || lastGrade.ingevoerdOp);
-		if (oldGrade.getTime() < new Date(lastGrade.ingevoerdOp).getTime()) {
-			Database.setLastGrade({ magister_username: user.magister_username, last_grade: lastGrade.ingevoerdOp });
-
-			Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade: lastGrade });
-			console.log(`[INFO] Nieuw cijfer: ${user.magister_username} (${lastGrade.vak.code}: ${lastGrade.waarde})`);
+		var grades;
+		try {
+			const tokens = await Magister.getTokens({
+				authCode: options.authCode,
+				username: user.magister_username,
+				password: user.magister_password
+			});
+			grades = (
+				await Magister.getGrades({
+					id: user.magister_id,
+					tokens
+				})
+			).items;
+		} catch (error) {
+			continue;
 		}
+
+		const oldGrade = new Date(user.last_grade || grades[0].ingevoerdOp);
+		grades.forEach((grade) => {
+			if (oldGrade.getTime() < new Date(grade.ingevoerdOp).getTime()) {
+				Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
+
+				Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade });
+				console.log(`[INFO] Nieuw cijfer: ${user.magister_username} (${grade.vak.code}: ${grade.waarde})`);
+			}
+		});
 
 		await sleep(options.requestDelay);
 	}
+
+	console.log(`[INFO] Grades updated.`);
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

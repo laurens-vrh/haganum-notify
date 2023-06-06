@@ -77,7 +77,7 @@ export async function getGrades({ id, tokens }) {
   totalCount: 74
 }*/
 
-	return await fetch(options.school.baseUrl + `/api/personen/${id}/cijfers/laatste?top=1`, {
+	return await fetch(options.school.baseUrl + `/api/personen/${id}/cijfers/laatste?top=${options.gradeCheck}`, {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
 }
