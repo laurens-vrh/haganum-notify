@@ -73,6 +73,9 @@ body {
 .block.block-intro button {
 	cursor: pointer;
 }
+.block.block-intro button:disabled {
+	opacity: 0.3;
+}
 .block.block-intro button,
 .block.block-intro input {
 	margin-top: calc(var(--margin) / 2);

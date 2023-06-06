@@ -24,14 +24,16 @@ app.post("/api/account", async (req, res) => {
 	if (!req.body.username || !req.body.password) return res.status(400).send("Gegevens missen.");
 	req.body.username = req.body.username.toLowerCase();
 
-	const tokens = await Magister.getTokens({
-		authCode: options.authCode,
-		username: req.body.username,
-		password: req.body.password
-	}).catch((error) => {
+	try {
+		const tokens = await Magister.getTokens({
+			authCode: options.authCode,
+			username: req.body.username,
+			password: req.body.password
+		});
+		const accountData = await Magister.getUserdata({ tokens });
+	} catch (error) {
 		return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
-	});
-	const accountData = await Magister.getUserdata({ tokens });
+	}
 	const name = accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
 	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id });
 	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
@@ -96,7 +98,7 @@ async function updateGrades() {
 			console.log(`[INFO] Nieuw cijfer: ${user.magister_username} (${lastGrade.vak.code}: ${lastGrade.waarde})`);
 		}
 
-		await sleep(1000);
+		await sleep(options.requestDelay);
 	}
 }
 

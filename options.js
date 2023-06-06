@@ -1,6 +1,7 @@
 export default {
 	port: 65010,
 	updateInterval: 30 * 60 * 1000,
+	requestDelay: 5 * 1000,
 	secret: "WOw GHaganum293 ajaja lekker updaten:)",
 
 	authCode: "6d5b6d5b",
