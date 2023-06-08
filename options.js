@@ -5,7 +5,7 @@ export default {
 	gradeCheck: 10,
 	secret: "WOw GHaganum293 ajaja lekker updaten:)",
 
-	authCode: "6d5b6d5b",
+	authCode: undefined,
 	school: {
 		displayName: "Gymnasium Haganum",
 		id: "76c30e4044f646bfb7efed8436dfc860",

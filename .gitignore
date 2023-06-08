@@ -1,4 +1,9 @@
+# Node modules
 node_modules
 
-*.db
-*.rest
+# Database files
+database.db
+authCode.json
+
+# Development files
+request.rest

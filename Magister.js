@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { AuthManager } from "magister-openid";
+import Puppeteer from "puppeteer";
 
 import options from "./options.js";
 const baseUrl = "https://accounts.magister.net";
@@ -80,4 +81,24 @@ export async function getGrades({ id, tokens }) {
 	return await fetch(options.school.baseUrl + `/api/personen/${id}/cijfers/laatste?top=${options.gradeCheck}`, {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
+}
+
+export async function getAuthCode() {
+	const browser = await Puppeteer.launch({ headless: "new" });
+	const page = await browser.newPage();
+	await page.setRequestInterception(true);
+
+	var authCode;
+
+	page.on("request", (request) => {
+		if (request.method() !== "POST" || !request.url().includes("accounts.magister.net/challenges/current")) return request.continue();
+
+		authCode = JSON.parse(request.postData()).authCode;
+		request.continue();
+	});
+
+	await page.goto("https://accounts.magister.net/");
+	await browser.close();
+
+	return authCode;
 }
