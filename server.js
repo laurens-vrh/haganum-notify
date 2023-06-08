@@ -6,6 +6,7 @@ import * as Database from "./Database.js";
 import * as Mailer from "./Mailer.js";
 
 import options from "./options.js";
+options.inProduction = !fs.existsSync("./request.rest");
 
 if (!fs.existsSync("./authCode.json")) fs.writeFileSync("./authCode.json", '""');
 const authCodeFile = fs.readFileSync("./authCode.json");
@@ -43,11 +44,11 @@ app.post("/api/account", async (req, res) => {
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
-				return (tryAgain = true);
-			}
-			return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
+				tryAgain = true;
+			} else return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 		}
 	}
+
 	const name = accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
 	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id });
 	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
@@ -133,8 +134,10 @@ async function updateGrades() {
 }
 
 async function refreshAuthCode() {
-	options.authCode = await Magister.getAuthCode();
+	console.log("[INFO] Refreshing auth code...");
+	options.authCode = await Magister.getAuthCode(options);
 	fs.writeFileSync("./authCode.json", JSON.stringify(options.authCode));
+	console.log("[INFO] Auth code refreshed.");
 	return;
 }
 

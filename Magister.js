@@ -83,8 +83,8 @@ export async function getGrades({ id, tokens }) {
 	}).then((res) => res.json());
 }
 
-export async function getAuthCode() {
-	const browser = await Puppeteer.launch({ headless: "new" });
+export async function getAuthCode({ inProduction }) {
+	const browser = await Puppeteer.launch(inProduction ? { headless: "new", executablePath: "/usr/bin/chromium", args: ["--no-sandbox"] } : { headless: "new" });
 	const page = await browser.newPage();
 	await page.setRequestInterception(true);
 
