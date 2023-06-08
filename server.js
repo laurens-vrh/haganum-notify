@@ -16,10 +16,6 @@ options.authCode = JSON.parse(authCodeFile);
 const app = Express();
 app.use("/api", Express.json());
 
-app.post("/api/subscription", async (req, res) => {
-	return console.log(req.body);
-});
-
 app.get("/api/users", async (req, res) => {
 	return res.status(200).send({
 		users: await Database.getUserCount()
@@ -104,7 +100,6 @@ async function updateGrades() {
 				})
 			).items;
 		} catch (error) {
-			console.log(error.message);
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				i--;
