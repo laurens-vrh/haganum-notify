@@ -1,9 +1,12 @@
 import Database from "better-sqlite3";
+import * as Logger from "./Logger.js";
+
 const db = new Database("database.db", {});
 
 export function init() {
-	console.log("[INFO] Initializing database...");
-	return db.prepare("CREATE TABLE Accounts (magister_username varchar(255) PRIMARY KEY NOT NULL, magister_password varchar(255) NOT NULL, magister_id int NOT NULL, name varchar(255) NOT NULL, last_grade varchar(255), stamnummer int NOT NULL);").run();
+	Logger.info("Initializing database...");
+	db.prepare("CREATE TABLE Accounts (magister_username varchar(255) PRIMARY KEY NOT NULL, magister_password varchar(255) NOT NULL, magister_id int NOT NULL, name varchar(255) NOT NULL, last_grade varchar(255), stamnummer int NOT NULL);").run();
+	Logger.success("Initialized database.");
 }
 
 export function getUserCount() {

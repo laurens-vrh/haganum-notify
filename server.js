@@ -4,6 +4,7 @@ import fs from "fs";
 import * as Magister from "./Magister.js";
 import * as Database from "./Database.js";
 import * as Mailer from "./Mailer.js";
+import * as Logger from "./Logger.js";
 
 import options from "./options.js";
 options.inProduction = !fs.existsSync("./request.rest");
@@ -49,7 +50,7 @@ app.post("/api/account", async (req, res) => {
 	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id });
 	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
 
-	console.log(`[INFO]	User registered: ${req.body.username}`);
+	Logger.info(`User registered: ${req.body.username}`);
 	res.status(200).send({ name });
 });
 
@@ -62,13 +63,13 @@ app.delete("/api/account", async (req, res) => {
 
 	Mailer.sendSignoutEmail({ name: change.name, stamnummer: change.stamnummer });
 	res.status(200).send("Account removed.");
-	console.log(`[INFO]	User deleted: ${req.body.username}`);
+	Logger.info(`User removed: ${req.body.username}`);
 });
 
 app.post("/api/force_update", async (req, res) => {
 	if (req.body.secret !== options.secret) return res.status(401).send("Ongeldige gegevens.");
 
-	console.log(`[INFO]	Forcing grade update.`);
+	Logger.info(`Forcing grade update...`);
 	res.status(200).send("Forcing grade update.");
 	updateGrades();
 });
@@ -76,16 +77,17 @@ app.post("/api/force_update", async (req, res) => {
 app.use("/", Express.static(Path.join(Path.resolve(), "/web/")));
 
 app.listen(options.port, () => {
-	console.log(`[INFO]	Server online (port: ${options.port})`);
+	Logger.info(`Server online. (port: ${options.port})`);
 });
 
 setInterval(updateGrades, options.updateInterval);
 async function updateGrades() {
-	console.log("[INFO]	Updating grades...");
+	Logger.info("Updating grades...");
 
 	const users = Database.getUsers();
 	for (let i = 0; i < users.length; i++) {
 		const user = users[i];
+		Logger.info(`${i === users.length - 1 ? "└──" : "├──"} ${user.magister_username}`);
 		var grades;
 		try {
 			const tokens = await Magister.getTokens({
@@ -113,28 +115,26 @@ async function updateGrades() {
 			continue;
 		}
 		const oldGrade = new Date(user.last_grade || grades[0].ingevoerdOp);
-		console.log("grades", grades);
 		grades.forEach((grade) => {
 			if (oldGrade.getTime() < new Date(grade.ingevoerdOp).getTime()) {
-				console.log("grade", grade);
 				Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
 
 				Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade });
-				console.log(`[INFO]	Nieuw cijfer: ${user.magister_username} (${grade.vak.code}: ${grade.waarde})`);
+				Logger.info(`	New grade: ${grade.vak.code} - ${grade.waarde} (${grade.omschrijving})`);
 			}
 		});
 
 		await sleep(options.requestDelay);
 	}
 
-	console.log(`[INFO]	Grades updated.`);
+	Logger.info(`Updated grades.`);
 }
 
 async function refreshAuthCode() {
-	console.log("[INFO]	Refreshing auth code...");
+	Logger.info("Refreshing auth code...");
 	options.authCode = await Magister.getAuthCode(options);
 	fs.writeFileSync("./authCode.json", JSON.stringify(options.authCode));
-	console.log("[INFO]	Auth code refreshed.");
+	Logger.success("Refreshed auth code.");
 	return;
 }
 
