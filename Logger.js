@@ -13,5 +13,5 @@ export function error(log, scope, timestamp = Date.now()) {
 }
 
 export function success(log, scope, timestamp = Date.now()) {
-	console.log(`   [${nChalk.gray(new Date(timestamp).toLocaleString("nl-NL"))} ${Chalk.bgGreen("INFO")}${scope ? " " + scope : ""}]    ${Chalk.green(log)}`);
+	console.log(`   [${Chalk.gray(new Date(timestamp).toLocaleString("nl-NL"))} ${Chalk.bgGreen("INFO")}${scope ? " " + scope : ""}]    ${Chalk.green(log)}`);
 }
