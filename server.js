@@ -41,11 +41,12 @@ app.post("/api/account", async (req, res) => {
 				password: req.body.password
 			});
 			accountData = await Magister.getUserdata({ tokens });
+			if (!accountData) throw Error("SecurityToken Expired");
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				tryAgain = true;
-			} else if (error.message.includes("InvalidUsernameOrPassword") && refreshedToken === false) {
+			} else if (error.message.includes("SecurityToken Expired") && refreshedToken === false) {
 				Database.setToken({ magister_username: req.body.username, magister_token: null });
 
 				refreshedToken = true;
@@ -105,25 +106,24 @@ async function updateGrades() {
 				username: user.magister_username,
 				password: user.magister_password
 			});
-			grades = (
-				await Magister.getGrades({
-					id: user.magister_id,
-					tokens
-				})
-			).items;
+			grades = await Magister.getGrades({
+				id: user.magister_id,
+				tokens
+			}).items;
+			if (!grades) throw Error("SecurityToken Expired");
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				i--;
-			} else if (error.message.includes("InvalidUsernameOrPassword") && !user.refreshedToken) {
-				Database.setToken({ magister_username: req.body.username, magister_token: null });
+			} else if (error.message.includes("SecurityToken Expired") && !user.refreshedToken) {
+				Database.setToken({ magister_username: user.magister_username, magister_token: null });
 
 				users[i].refreshedToken = true;
 				i--;
 			}
 			continue;
 		}
-
+		console.log(grades);
 		if (!grades[0]) continue;
 		if (!user.last_grade) {
 			Database.setLastGrade({ magister_username: user.magister_username, last_grade: new Date().toISOString() });
@@ -154,3 +154,8 @@ async function refreshAuthCode() {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+process.on("uncaughtException", (error) => {
+	Logger.error(error, undefined, undefined, true);
+	process.exit(1);
+});

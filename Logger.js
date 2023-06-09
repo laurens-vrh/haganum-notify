@@ -8,8 +8,9 @@ export function warn(log, scope, timestamp = Date.now()) {
 	console.log(`   [${Chalk.gray(new Date(timestamp).toLocaleString("nl-NL"))} ${Chalk.yellow("WARN")}${scope ? " " + scope : ""}]    ${Chalk.yellow(log)}`);
 }
 
-export function error(log, scope, timestamp = Date.now()) {
+export function error(log, scope, timestamp = Date.now(), consoleError = false) {
 	console.log(`   [${Chalk.gray(new Date(timestamp).toLocaleString("nl-NL"))} ${Chalk.bgRed("ERROR")}${scope ? " " + scope : ""}]    ${Chalk.red(log)}`);
+	if (consoleError) console.error(log);
 }
 
 export function success(log, scope, timestamp = Date.now()) {
