@@ -28,11 +28,14 @@ app.post("/api/account", async (req, res) => {
 	req.body.username = req.body.username.toLowerCase();
 
 	var accountData;
+	var tokens;
+
 	var tryAgain = true;
+	var refreshedToken = false;
 	while (tryAgain) {
 		tryAgain = false;
 		try {
-			const tokens = await Magister.getTokens({
+			tokens = await Magister.getTokens({
 				authCode: options.authCode,
 				username: req.body.username,
 				password: req.body.password
@@ -42,12 +45,17 @@ app.post("/api/account", async (req, res) => {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				tryAgain = true;
+			} else if (error.message.includes("InvalidUsernameOrPassword") && refreshedToken === false) {
+				Database.setToken({ magister_username: req.body.username, magister_token: null });
+
+				refreshedToken = true;
+				tryAgain = true;
 			} else return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 		}
 	}
 
 	const name = accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
-	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id });
+	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id, magister_token: tokens.access_token });
 	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
 
 	Logger.info(`User registered: ${req.body.username}`);
@@ -88,7 +96,9 @@ async function updateGrades() {
 	for (let i = 0; i < users.length; i++) {
 		const user = users[i];
 		Logger.info(`${i === users.length - 1 ? "└──" : "├──"} ${user.magister_username}`);
+
 		var grades;
+
 		try {
 			const tokens = await Magister.getTokens({
 				authCode: options.authCode,
@@ -104,6 +114,11 @@ async function updateGrades() {
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
+				i--;
+			} else if (error.message.includes("InvalidUsernameOrPassword") && !user.refreshedToken) {
+				Database.setToken({ magister_username: req.body.username, magister_token: null });
+
+				users[i].refreshedToken = true;
 				i--;
 			}
 			continue;

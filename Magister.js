@@ -2,6 +2,8 @@ import fetch from "node-fetch";
 import { AuthManager } from "magister-openid";
 import Puppeteer from "puppeteer";
 
+import * as Database from "./Database.js";
+
 import options from "./options.js";
 const baseUrl = "https://accounts.magister.net";
 const authManager = new AuthManager(options.school.id);
@@ -14,7 +16,16 @@ export async function getSchools(query) {
 }
 
 export async function getTokens({ authCode, username, password }) {
-	return await authManager.login(username, password, authCode);
+	var tokens = {
+		token_type: "Bearer",
+		access_token: await Database.getToken({ magister_username: username, magister_password: password })
+	};
+	if (!tokens.access_token) {
+		tokens = await authManager.login(username, password, authCode);
+		Database.setToken({ magister_username: username, magister_token: tokens.access_token });
+	}
+
+	return tokens;
 }
 
 export async function getUserdata({ tokens }) {
