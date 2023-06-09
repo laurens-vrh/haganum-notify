@@ -109,12 +109,14 @@ async function updateGrades() {
 
 		if (!grades[0]) continue;
 		if (!user.last_grade) {
-			Database.setLastGrade({ magister_username: user.magister_username, last_grade: new Date() });
+			Database.setLastGrade({ magister_username: user.magister_username, last_grade: new Date().toISOString() });
 			continue;
 		}
 		const oldGrade = new Date(user.last_grade || grades[0].ingevoerdOp);
+		console.log("grades", grades);
 		grades.forEach((grade) => {
 			if (oldGrade.getTime() < new Date(grade.ingevoerdOp).getTime()) {
+				console.log("grade", grade);
 				Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
 
 				Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade });
@@ -129,10 +131,10 @@ async function updateGrades() {
 }
 
 async function refreshAuthCode() {
-	console.log("[INFO] Refreshing auth code...");
+	console.log("[INFO]	Refreshing auth code...");
 	options.authCode = await Magister.getAuthCode(options);
 	fs.writeFileSync("./authCode.json", JSON.stringify(options.authCode));
-	console.log("[INFO] Auth code refreshed.");
+	console.log("[INFO]	Auth code refreshed.");
 	return;
 }
 
