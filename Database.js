@@ -5,7 +5,7 @@ const db = new Database("database.db", {});
 
 export function init() {
 	Logger.info("Initializing database...");
-	db.prepare("CREATE TABLE Accounts (magister_username varchar(255) PRIMARY KEY NOT NULL, magister_password varchar(255) NOT NULL, magister_id int NOT NULL, name varchar(255) NOT NULL, last_grade varchar(255), stamnummer int NOT NULL, magister_token varchar(2048));").run();
+	db.prepare("CREATE TABLE Accounts (magister_username varchar(255) PRIMARY KEY NOT NULL, magister_password varchar(255) NOT NULL, magister_id int NOT NULL, name varchar(255) NOT NULL, last_grade varchar(255), stamnummer int NOT NULL, magister_token varchar(8192));").run();
 	Logger.success("Initialized database.");
 }
 

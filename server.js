@@ -106,10 +106,13 @@ async function updateGrades() {
 				username: user.magister_username,
 				password: user.magister_password
 			});
-			grades = await Magister.getGrades({
-				id: user.magister_id,
-				tokens
-			}).items;
+			grades = (
+				await Magister.getGrades({
+					id: user.magister_id,
+					tokens
+				})
+			)?.items;
+
 			if (!grades) throw Error("SecurityToken Expired");
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
@@ -123,7 +126,6 @@ async function updateGrades() {
 			}
 			continue;
 		}
-		console.log(grades);
 		if (!grades[0]) continue;
 		if (!user.last_grade) {
 			Database.setLastGrade({ magister_username: user.magister_username, last_grade: new Date().toISOString() });
