@@ -132,9 +132,13 @@ async function updateGrades() {
 			continue;
 		}
 		const oldGrade = new Date(user.last_grade || grades[0].ingevoerdOp);
+		var alreadyUpdatedDatabase = false;
 		grades.forEach((grade) => {
 			if (oldGrade.getTime() < new Date(grade.ingevoerdOp).getTime()) {
-				Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
+				if (!alreadyUpdatedDatabase) {
+					Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
+					alreadyUpdatedDatabase = true;
+				}
 
 				Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade });
 				Logger.info(`	New grade: ${grade.vak.code} - ${grade.waarde} (${grade.omschrijving})`);
