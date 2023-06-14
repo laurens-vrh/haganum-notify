@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 import Express from "express";
 import Path from "path";
 import fs from "fs";
