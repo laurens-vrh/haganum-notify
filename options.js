@@ -3,7 +3,6 @@ export default {
 	updateInterval: 30 * 60 * 1000,
 	requestDelay: 5 * 1000,
 	gradeCheck: 10,
-	secret: "WOw GHaganum293 ajaja lekker updaten:)",
 
 	authCode: undefined,
 	school: {
@@ -12,9 +11,5 @@ export default {
 		baseUrl: "https://haganum.magister.net"
 	},
 
-	email: {
-		user: "lauverhaar@gmail.com",
-		password: "uggtkbxnmuzmjioq"
-	},
 	url: "https://laurensverhaar.nl/haganum-nuntia"
 };

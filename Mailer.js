@@ -5,8 +5,8 @@ import options from "./options.js";
 const transporter = nodemailer.createTransport({
 	service: "gmail",
 	auth: {
-		user: options.email.user,
-		pass: options.email.password
+		user: process.env.EMAIL,
+		pass: process.env.EMAIL_PASSWORD
 	}
 });
 

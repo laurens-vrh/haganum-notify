@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import Express from "express";
 import Path from "path";
 import fs from "fs";
@@ -7,7 +9,7 @@ import * as Mailer from "./Mailer.js";
 import * as Logger from "./Logger.js";
 
 import options from "./options.js";
-options.inProduction = !fs.existsSync("./request.rest");
+options.inProduction = process.env.IN_PRODUCTION === "true";
 
 if (!fs.existsSync("./authCode.json")) fs.writeFileSync("./authCode.json", '""');
 const authCodeFile = fs.readFileSync("./authCode.json");
@@ -76,7 +78,7 @@ app.delete("/api/account", async (req, res) => {
 });
 
 app.post("/api/force_update", async (req, res) => {
-	if (req.body.secret !== options.secret) return res.status(401).send("Ongeldige gegevens.");
+	if (req.body.secret !== process.env.API_SECRET) return res.status(401).send("Ongeldige gegevens.");
 
 	Logger.info(`Forcing grade update...`);
 	res.status(200).send("Forcing grade update.");

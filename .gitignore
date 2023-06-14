@@ -5,5 +5,8 @@ node_modules
 database.db
 authCode.json
 
+# Environment variables
+.env
+
 # Development files
 request.rest
