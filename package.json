@@ -1,12 +1,12 @@
 {
-	"name": "haganum-notify",
+	"name": "haganum-nuntia",
 	"version": "1.0.0",
 	"description": "",
 	"main": "server.js",
 	"type": "module",
 	"scripts": {
 		"start": "nodemon .",
-		"dev": "nodemon index.js"
+		"dev": "nodemon ."
 	},
 	"keywords": [],
 	"author": "",
