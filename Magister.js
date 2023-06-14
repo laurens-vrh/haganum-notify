@@ -55,7 +55,7 @@ export async function getUserdata({ tokens }) {
 	const accountData = await fetch(options.school.baseUrl + "/api/account", {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
-	if (accountData === "SecurityToken Expired") return undefined;
+	if (accountData === "SecurityToken Expired") throw Error("SecurityToken Expired");
 	const profileData = await fetch(options.school.baseUrl + `/api/personen/${accountData.Persoon.Id}/opleidinggegevensprofiel`, {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
