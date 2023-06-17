@@ -1,5 +1,6 @@
 # Node modules
-node_modules
+node_modules/
+dist/
 
 # Database files
 database.db
@@ -9,4 +10,4 @@ authCode.json
 .env
 
 # Development files
-request.rest
+.rest
