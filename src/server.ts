@@ -7,12 +7,11 @@ import * as Database from "./Database.js";
 import * as Mailer from "./Mailer.js";
 import * as Logger from "./Logger.js";
 
-import options from "./options.js";
+import options from "../options.js";
 options.inProduction = process.env.IN_PRODUCTION === "true";
 
 if (!fs.existsSync("./authCode.json")) fs.writeFileSync("./authCode.json", '""');
-const authCodeFile = fs.readFileSync("./authCode.json");
-options.authCode = JSON.parse(authCodeFile);
+options.authCode = JSON.parse(fs.readFileSync("./authCode.json").toString());
 
 // Database.init();
 const app = Express();
@@ -84,7 +83,7 @@ app.post("/api/force_update", async (req, res) => {
 	updateGrades();
 });
 
-app.use("/", Express.static(Path.join(Path.resolve(), "/web/")));
+app.use("/", Express.static(Path.join(Path.resolve(), "./web/")));
 
 app.listen(options.port, () => {
 	Logger.info(`Server online. (port: ${options.port})`);
@@ -107,14 +106,12 @@ async function updateGrades() {
 				username: user.magister_username,
 				password: user.magister_password
 			});
-			grades = (
-				await Magister.getGrades({
-					id: user.magister_id,
-					tokens
-				})
-			)?.items;
-
+			grades = await Magister.getGrades({
+				id: user.magister_id,
+				tokens
+			});
 			if (!grades) throw Error("SecurityToken Expired");
+			grades = grades.items;
 		} catch (error) {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
@@ -149,12 +146,12 @@ async function updateGrades() {
 		await sleep(options.requestDelay);
 	}
 
-	Logger.info(`Updated grades.`);
+	Logger.info("Updated grades.");
 }
 
 async function refreshAuthCode() {
 	Logger.info("Refreshing auth code...");
-	options.authCode = await Magister.getAuthCode(options);
+	options.authCode = await Magister.getAuthCode({ inProduction: options.inProduction });
 	fs.writeFileSync("./authCode.json", JSON.stringify(options.authCode));
 	Logger.success("Refreshed auth code.");
 	return;
@@ -163,6 +160,6 @@ async function refreshAuthCode() {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 process.on("uncaughtException", (error) => {
-	Logger.error(error, undefined, undefined, true);
+	Logger.error(error, { consoleError: true });
 	process.exit(1);
 });

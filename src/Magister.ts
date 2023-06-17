@@ -4,7 +4,7 @@ import Puppeteer from "puppeteer";
 
 import * as Database from "./Database.js";
 
-import options from "./options.js";
+import options from "../options.js";
 const baseUrl = "https://accounts.magister.net";
 const authManager = new AuthManager(options.school.id);
 
@@ -52,7 +52,7 @@ export async function getUserdata({ tokens }) {
 }
 */
 
-	const accountData = await fetch(options.school.baseUrl + "/api/account", {
+	const accountData: any = await fetch(options.school.baseUrl + "/api/account", {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
 	if (accountData === "SecurityToken Expired") throw Error("SecurityToken Expired");
