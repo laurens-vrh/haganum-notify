@@ -63,7 +63,7 @@ export async function getUserdata({ tokens }) {
 	return accountData;
 }
 
-export async function getGrades({ id, tokens }) {
+export async function getGrades({ id, tokens }): Promise<any> {
 	/*{
   items: [
     {
