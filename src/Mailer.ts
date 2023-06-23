@@ -35,5 +35,5 @@ export async function sendSignoutEmail({ name, stamnummer }) {
 }
 
 export async function sendEmail({ address, subject, text }) {
-	return await transporter.sendMail({ from: '"Haganum Nuntia" <notificaties@haganum.net>', to: address, subject, text });
+	return await transporter.sendMail({ from: '"Haganum Nuntia" <haganum-nuntia@laurensverhaar.nl>', to: address, subject, text });
 }
