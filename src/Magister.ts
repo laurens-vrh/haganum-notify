@@ -2,13 +2,13 @@ import fetch from "node-fetch";
 import { AuthManager } from "magister-openid";
 import Puppeteer from "puppeteer";
 
+import { MagisterGrades, MagisterUser } from "./types.js";
 import * as Database from "./Database.js";
 
 import options from "../options.js";
-const baseUrl = "https://accounts.magister.net";
 const authManager = new AuthManager(options.school.id);
 
-export async function getSchools(query) {
+export async function getSchools(query: string) {
 	query = query.replace(/\d/g, "").trim().replace(/ +/g, "+");
 	if (query.length < 3) return Promise.resolve([]);
 
@@ -28,30 +28,7 @@ export async function getTokens({ authCode, username, password }) {
 	return tokens;
 }
 
-export async function getUserdata({ tokens }) {
-	/*
-{
-  UuId: '9d470ce1-6ecc-4ea4-8b5c-61119a4291ec',
-  Persoon: {
-    "Studie":"04","Klas":"Klas 4d","StamNr":"6081","ExamenNr":null,"Profielen":"Economie en Maatschappij"
-    Id: 8426,
-    Roepnaam: 'Laurens',
-    Tussenvoegsel: null,
-    Achternaam: 'Verhaar',
-    OfficieleVoornamen: 'Laurens Paul',
-    Voorletters: 'L.P.',
-    OfficieleTussenvoegsels: null,
-    OfficieleAchternaam: 'Verhaar',
-    Geboortedatum: '2008-11-08',
-    GeboorteAchternaam: null,
-    GeboortenaamTussenvoegsel: null,
-    GebruikGeboortenaam: false
-  },
-  Groep: [ { Naam: 'Leerling', Privileges: [Array], Links: null } ],
-  Links: []
-}
-*/
-
+export async function getUserdata({ tokens }): Promise<MagisterUser> {
 	const accountData: any = await fetch(options.school.baseUrl + "/api/account", {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
@@ -63,33 +40,7 @@ export async function getUserdata({ tokens }) {
 	return accountData;
 }
 
-export async function getGrades({ id, tokens }): Promise<any> {
-	/*{
-  items: [
-    {
-      kolomId: 124438,
-      omschrijving: 'Corvus',
-      ingevoerdOp: '2023-05-31T11:50:35.0000000Z',
-      vak: { code: 'entl', omschrijving: 'Engelse taal en literatuur' },
-      waarde: '9,0',
-      weegfactor: 2,
-      isVoldoende: true,
-      teltMee: true,
-      moetInhalen: false,
-      heeftVrijstelling: false,
-      behaaldOp: null,
-      links: {}
-    }
-  ],
-  links: {
-    voortgangscijfers: { href: '/api/aanmeldingen/20947/cijfers' },
-    first: { href: '/api/personen/8426/cijfers/laatste?top=1' },
-    next: { href: '/api/personen/8426/cijfers/laatste?top=1&skip=1' },
-    last: { href: '/api/personen/8426/cijfers/laatste?top=1&skip=73' }
-  },
-  totalCount: 74
-}*/
-
+export async function getGrades({ id, tokens }): Promise<MagisterGrades> {
 	return await fetch(options.school.baseUrl + `/api/personen/${id}/cijfers/laatste?top=${options.gradeCheck}`, {
 		headers: { Authorization: `${tokens.token_type} ${tokens.access_token}` }
 	}).then((res) => res.json());
@@ -100,7 +51,7 @@ export async function getAuthCode({ inProduction }) {
 	const page = await browser.newPage();
 	await page.setRequestInterception(true);
 
-	var authCode;
+	var authCode: string;
 
 	page.on("request", (request) => {
 		if (request.method() !== "POST" || !request.url().includes("accounts.magister.net/challenges/current")) return request.continue();
