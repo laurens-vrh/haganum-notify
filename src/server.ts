@@ -1,6 +1,6 @@
 import "dotenv/config";
 import Express from "express";
-import Path from "path";
+import cors from "cors";
 import fs from "fs";
 import * as Magister from "./Magister.js";
 import * as Database from "./Database.js";
@@ -10,21 +10,24 @@ import * as Logger from "./Logger.js";
 import options from "../options.js";
 options.inProduction = process.env.IN_PRODUCTION === "true";
 
-if (!fs.existsSync("./authCode.json")) fs.writeFileSync("./authCode.json", '""');
+if (!fs.existsSync("./authCode.json"))
+	fs.writeFileSync("./authCode.json", '""');
 options.authCode = JSON.parse(fs.readFileSync("./authCode.json").toString());
 
 // Database.init();
 const app = Express();
+app.use(cors());
 app.use("/api", Express.json());
 
 app.get("/api/users", async (req, res) => {
 	return res.status(200).send({
-		users: await Database.getUserCount()
+		users: await Database.getUserCount(),
 	});
 });
 
 app.post("/api/account", async (req, res) => {
-	if (!req.body.username || !req.body.password) return res.status(400).send("Gegevens missen.");
+	if (!req.body.username || !req.body.password)
+		return res.status(400).send("Gegevens missen.");
 	req.body.username = req.body.username.toLowerCase();
 
 	var accountData;
@@ -38,7 +41,7 @@ app.post("/api/account", async (req, res) => {
 			tokens = await Magister.getTokens({
 				authCode: options.authCode,
 				username: req.body.username,
-				password: req.body.password
+				password: req.body.password,
 			});
 			accountData = await Magister.getUserdata({ tokens });
 			if (!accountData) throw Error("SecurityToken Expired");
@@ -46,17 +49,32 @@ app.post("/api/account", async (req, res) => {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				tryAgain = true;
-			} else if (error.message.includes("SecurityToken Expired") && refreshedToken === false) {
-				Database.setToken({ magister_username: req.body.username, magister_token: null });
+			} else if (
+				error.message.includes("SecurityToken Expired") &&
+				refreshedToken === false
+			) {
+				Database.setToken({
+					magister_username: req.body.username,
+					magister_token: null,
+				});
 
 				refreshedToken = true;
 				tryAgain = true;
-			} else return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
+			} else
+				return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 		}
 	}
 
-	const name = accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
-	Database.saveAccount({ name, magister_username: req.body.username, magister_password: req.body.password, stamnummer: accountData.Persoon.StamNr, magister_id: accountData.Persoon.Id, magister_token: tokens.access_token });
+	const name =
+		accountData.Persoon.Roepnaam + " " + accountData.Persoon.Achternaam;
+	Database.saveAccount({
+		name,
+		magister_username: req.body.username,
+		magister_password: req.body.password,
+		stamnummer: accountData.Persoon.StamNr,
+		magister_id: accountData.Persoon.Id,
+		magister_token: tokens.access_token,
+	});
 	Mailer.sendSignupEmail({ name, stamnummer: accountData.Persoon.StamNr });
 
 	Logger.info(`User registered: ${req.body.username}`);
@@ -64,11 +82,16 @@ app.post("/api/account", async (req, res) => {
 });
 
 app.delete("/api/account", async (req, res) => {
-	if (!req.body.username || !req.body.password) return res.status(400).send("Gegevens missen.");
+	if (!req.body.username || !req.body.password)
+		return res.status(400).send("Gegevens missen.");
 	req.body.username = req.body.username.toLowerCase();
 
-	const change = Database.deleteAccount({ magister_username: req.body.username, magister_password: req.body.password });
-	if (!change) return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
+	const change = Database.deleteAccount({
+		magister_username: req.body.username,
+		magister_password: req.body.password,
+	});
+	if (!change)
+		return res.status(401).send("Ongeldige gegevens. (waarschijnlijk)");
 
 	Mailer.sendSignoutEmail({ name: change.name, stamnummer: change.stamnummer });
 	res.status(200).send("Account removed.");
@@ -76,14 +99,13 @@ app.delete("/api/account", async (req, res) => {
 });
 
 app.post("/api/force_update", async (req, res) => {
-	if (req.body.secret !== process.env.API_SECRET) return res.status(401).send("Ongeldige gegevens.");
+	if (req.body.secret !== process.env.API_SECRET)
+		return res.status(401).send("Ongeldige gegevens.");
 
 	Logger.info(`Forcing grade update...`);
 	res.status(200).send("Forcing grade update.");
 	updateGrades();
 });
-
-app.use("/", Express.static(Path.join(Path.resolve(), "./web/")));
 
 app.listen(options.port, () => {
 	Logger.info(`Server online. (port: ${options.port})`);
@@ -96,7 +118,9 @@ async function updateGrades() {
 	const users = Database.getUsers();
 	for (let i = 0; i < users.length; i++) {
 		const user = users[i];
-		Logger.info(`${i === users.length - 1 ? "└──" : "├──"} ${user.magister_username}`);
+		Logger.info(
+			`${i === users.length - 1 ? "└──" : "├──"} ${user.magister_username}`
+		);
 
 		var grades;
 
@@ -104,12 +128,12 @@ async function updateGrades() {
 			const tokens = await Magister.getTokens({
 				authCode: options.authCode,
 				username: user.magister_username,
-				password: user.magister_password
+				password: user.magister_password,
 			});
 			grades = (
 				await Magister.getGrades({
 					id: user.magister_id,
-					tokens
+					tokens,
 				})
 			)?.items;
 			if (!grades) throw Error("SecurityToken Expired");
@@ -117,8 +141,14 @@ async function updateGrades() {
 			if (error.message.includes("AuthCodeValidation")) {
 				await refreshAuthCode();
 				i--;
-			} else if (error.message.includes("SecurityToken Expired") && !user.refreshedToken) {
-				Database.setToken({ magister_username: user.magister_username, magister_token: null });
+			} else if (
+				error.message.includes("SecurityToken Expired") &&
+				!user.refreshedToken
+			) {
+				Database.setToken({
+					magister_username: user.magister_username,
+					magister_token: null,
+				});
 
 				users[i].refreshedToken = true;
 				i--;
@@ -127,7 +157,10 @@ async function updateGrades() {
 		}
 		if (!grades[0]) continue;
 		if (!user.last_grade) {
-			Database.setLastGrade({ magister_username: user.magister_username, last_grade: new Date().toISOString() });
+			Database.setLastGrade({
+				magister_username: user.magister_username,
+				last_grade: new Date().toISOString(),
+			});
 			continue;
 		}
 		const oldGrade = new Date(user.last_grade || grades[0].ingevoerdOp);
@@ -135,12 +168,21 @@ async function updateGrades() {
 		grades.forEach((grade) => {
 			if (oldGrade.getTime() < new Date(grade.ingevoerdOp).getTime()) {
 				if (!alreadyUpdatedDatabase) {
-					Database.setLastGrade({ magister_username: user.magister_username, last_grade: grade.ingevoerdOp });
+					Database.setLastGrade({
+						magister_username: user.magister_username,
+						last_grade: grade.ingevoerdOp,
+					});
 					alreadyUpdatedDatabase = true;
 				}
 
-				Mailer.sendGradeEmail({ name: user.name, stamnummer: user.stamnummer, grade });
-				Logger.info(`	New grade: ${grade.vak.code} - ${grade.waarde} (${grade.omschrijving})`);
+				Mailer.sendGradeEmail({
+					name: user.name,
+					stamnummer: user.stamnummer,
+					grade,
+				});
+				Logger.info(
+					`	New grade: ${grade.vak.code} - ${grade.waarde} (${grade.omschrijving})`
+				);
 			}
 		});
 
@@ -152,7 +194,9 @@ async function updateGrades() {
 
 async function refreshAuthCode() {
 	Logger.info("Refreshing auth code...");
-	options.authCode = await Magister.getAuthCode({ inProduction: options.inProduction });
+	options.authCode = await Magister.getAuthCode({
+		inProduction: options.inProduction,
+	});
 	fs.writeFileSync("./authCode.json", JSON.stringify(options.authCode));
 	Logger.success("Refreshed auth code.");
 	return;
